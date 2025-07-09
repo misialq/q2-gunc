@@ -10,8 +10,8 @@
 try:
     from ._version import __version__
 except ModuleNotFoundError:
-    __version__ = '0.0.0+notfound'
+    __version__ = "0.0.0+notfound"
 
-from .gunc import run_gunc, download_gunc_db
+from .gunc import _run_gunc, run_gunc, download_gunc_db
 
-__all__ = ["run_gunc", "download_gunc_db"]
+__all__ = ["_run_gunc", "run_gunc", "download_gunc_db"]

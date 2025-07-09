@@ -10,6 +10,7 @@ from ._format import (
     GUNCResultsFormat,
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
+    GUNCGeneCountsFormat,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "GUNCResultsDirectoryFormat",
     "GUNCDB",
     "GUNCDatabaseDirFmt",
+    "GUNCGeneCountsFormat",
 ]

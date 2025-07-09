@@ -5,7 +5,9 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import glob
 import subprocess
+from copy import deepcopy
 from typing import Union
 
 from q2_types.feature_data_mag import MAGSequencesDirFmt
@@ -54,45 +56,86 @@ def download_gunc_db(database: str = "progenomes") -> GUNCDatabaseDirFmt:
     return db
 
 
-def run_gunc(
+def _run_gunc(
     mags: Union[MAGSequencesDirFmt, MultiMAGSequencesDirFmt],
-    db: DiamondDatabaseDirFmt,
+    db: GUNCDatabaseDirFmt,
     threads: int = 1,
     sensitive: bool = False,
-    detailed_output: bool = False,
-    contig_taxonomy_output: bool = False,
     use_species_level: bool = False,
     min_mapped_genes: int = 11,
 ) -> GUNCResultsDirectoryFormat:
     """Run GUNC on the provided MAGs."""
 
     results = GUNCResultsDirectoryFormat()
+    db_fp = glob.glob(f"{db.path}/*.dmnd")[0]
 
-    cmd = [
+    base_cmd = [
         "gunc",
         "run",
-        "--input_dir",
-        str(mags.path),
         "--db_file",
-        str(db.path / "ref_db.dmnd"),
-        "--out_dir",
-        str(results.path),
+        db_fp,
         "--threads",
         str(threads),
         "--file_suffix",
         ".fasta",
+        "--detailed_output",
     ]
-
     if sensitive:
-        cmd.append("--sensitive")
-    if detailed_output:
-        cmd.append("--detailed_output")
-    if contig_taxonomy_output:
-        cmd.append("--contig_taxonomy_output")
+        base_cmd.append("--sensitive")
     if use_species_level:
-        cmd.append("--use_species_level")
+        base_cmd.append("--use_species_level")
     if min_mapped_genes is not None:
-        cmd.extend(["--min_mapped_genes", str(min_mapped_genes)])
+        base_cmd.extend(["--min_mapped_genes", str(min_mapped_genes)])
 
-    run_command(cmd, verbose=True)
+    if isinstance(mags, MultiMAGSequencesDirFmt):
+        for sample_id, mags in mags.sample_dict():
+            cmd = deepcopy(base_cmd)
+            cmd.extend(
+                [
+                    "--input_dir",
+                    str(mags.path / sample_id),
+                    "--out_dir",
+                    str(results.path / sample_id),
+                ]
+            )
+            run_command(cmd, verbose=True)
+    else:
+        base_cmd.extend(
+            [
+                "--input_dir",
+                str(mags.path),
+                "--out_dir",
+                str(results.path),
+            ]
+        )
+        run_command(base_cmd, verbose=True)
+
     return results
+
+
+def run_gunc(
+    ctx,
+    mags,
+    db,
+    threads=1,
+    sensitive=False,
+    use_species_level=False,
+    min_mapped_genes=11,
+    num_partitions=None,
+):
+    kwargs = {
+        k: v for k, v in locals().items() if k not in ["mags", "ctx", "num_partitions"]
+    }
+
+    if issubclass(mags.format, MultiMAGSequencesDirFmt):
+        partition_action = "partition_sample_data_mags"
+    else:
+        partition_action = "partition_feature_data_mags"
+    _partition = ctx.get_action("types", partition_action)
+    _run = ctx.get_action("gunc", "_run_gunc")
+
+    (partitioned_mags,) = _partition(mags, num_partitions)
+    results = []
+    for mag in partitioned_mags.values():
+        (result,) = _run(mag, **kwargs)
+        results.append(result)
