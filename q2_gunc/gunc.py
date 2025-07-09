@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import glob
+import shutil
 import subprocess
 from copy import deepcopy
 from typing import Union
@@ -13,9 +14,9 @@ from typing import Union
 from q2_types.feature_data_mag import MAGSequencesDirFmt
 from q2_types.per_sample_sequences import MultiMAGSequencesDirFmt
 from q2_types.reference_db import DiamondDatabaseDirFmt
+from qiime2.util import duplicate
 
-from .types import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt
-
+from .types import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt, GUNCResultsFormat
 
 EXTERNAL_CMD_WARNING = (
     "Running external command line application(s). "
@@ -133,9 +134,32 @@ def run_gunc(
         partition_action = "partition_feature_data_mags"
     _partition = ctx.get_action("types", partition_action)
     _run = ctx.get_action("gunc", "_run_gunc")
+    _collate = ctx.get_action("gunc", "collate_gunc_results")
 
     (partitioned_mags,) = _partition(mags, num_partitions)
     results = []
     for mag in partitioned_mags.values():
         (result,) = _run(mag, **kwargs)
         results.append(result)
+
+    collated, = _collate(results)
+
+    return collated
+
+
+def collate_gunc_results(results: GUNCResultsDirectoryFormat) -> GUNCResultsDirectoryFormat:
+    """Collate the GUNC results."""
+    output = GUNCResultsDirectoryFormat()
+    for result in results:
+        for sample_id, sample_path in result.file_dict().items():
+            print(sample_id, sample_path)
+            shutil.copytree(sample_path, output.path / sample_id, dirs_exist_ok=True)
+    return output
+
+
+# def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
+#     """Visualize the GUNC results."""
+#     run_command(
+#         ["gunc", "visualize", "--out_dir", output_dir],
+#         verbose=True,
+#     )

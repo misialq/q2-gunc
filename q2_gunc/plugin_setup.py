@@ -11,9 +11,9 @@ from q2_types.feature_data_mag import MAG
 from q2_types.per_sample_sequences import MAGs
 from q2_types.reference_db import ReferenceDB, Diamond
 from q2_types.sample_data import SampleData
-from qiime2.core.type import Range, Int, Bool, Str, Choices
-from qiime2.plugin import Citations, Plugin
-from q2_gunc import __version__, _run_gunc, run_gunc, download_gunc_db
+from qiime2.core.type import Range, Int, Bool, Str, Choices, List
+from qiime2.plugin import Citations, Plugin, Collection
+from q2_gunc import __version__, _run_gunc, run_gunc, download_gunc_db, collate_gunc_results
 from q2_gunc.types import (
     GUNCDB,
     GUNCResults,
@@ -101,6 +101,19 @@ plugin.pipelines.register_function(
     name="Detect chimerism and contamination using GUNC.",
     description="Run GUNC to evaluate MAG quality.",
     citations=[citations["orakov_gunc_2021"]],
+)
+
+plugin.methods.register_function(
+    function=collate_gunc_results,
+    inputs={"results": List[GUNCResults]},
+    parameters={},
+    outputs={"collated_results": GUNCResults},
+    input_descriptions={"results": "GUNC results to collate."},
+    parameter_descriptions={},
+    output_descriptions={"collated_results": "Collated results."},
+    name="Collate GUNC results.",
+    description="Collate GUNC results from multiple runs.",
+    citations=[],
 )
 
 plugin.register_formats(

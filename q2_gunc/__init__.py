@@ -12,6 +12,6 @@ try:
 except ModuleNotFoundError:
     __version__ = "0.0.0+notfound"
 
-from .gunc import _run_gunc, run_gunc, download_gunc_db
+from .gunc import _run_gunc, run_gunc, download_gunc_db, collate_gunc_results
 
-__all__ = ["_run_gunc", "run_gunc", "download_gunc_db"]
+__all__ = ["_run_gunc", "run_gunc", "download_gunc_db", "collate_gunc_results"]

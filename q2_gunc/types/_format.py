@@ -8,6 +8,7 @@
 import json
 
 import pandas as pd
+from q2_types._util import FileDictMixin
 from q2_types.feature_data import ProteinFASTAFormat
 from q2_types.genome_data import OrthologFileFmt
 from q2_types.reference_db import DiamondDatabaseFileFmt
@@ -78,6 +79,16 @@ class GUNCResultsDirectoryFormat(model.DirectoryFormat):
     def gunc_results_path_maker(self, sample_id, mag_id):
         prefix = f"{sample_id}/" if sample_id else ""
         return f"{prefix}gunc_output/{mag_id}.all_levels.tsv"
+
+    def file_dict(self):
+        subdir = self.path / "gunc_output"
+        if subdir.exists() and subdir.is_dir():
+            return {"": str(self.path)}
+        else:
+            sample_dict = {}
+            for sample_dir in self.path.iterdir():
+                sample_dict[sample_dir.name] = sample_dir
+            return sample_dict
 
 
 GUNCDatabaseDirFmt = model.SingleFileDirectoryFormat(
