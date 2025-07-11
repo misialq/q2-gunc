@@ -6,18 +6,23 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import glob
+import json
+import os
 import shutil
 import subprocess
+import tempfile
 from copy import deepcopy
+from importlib import resources
+from pathlib import Path
 from typing import Union
 
+import q2templates
 from q2_types.feature_data_mag import MAGSequencesDirFmt
 from q2_types.per_sample_sequences import MultiMAGSequencesDirFmt
-from q2_types.reference_db import DiamondDatabaseDirFmt
-from qiime2.util import duplicate
 
 from .types import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt, GUNCResultsFormat
 
+TEMPLATES = resources.files("q2_gunc") / "assets"
 EXTERNAL_CMD_WARNING = (
     "Running external command line application(s). "
     "This may print messages to stdout and/or stderr.\n"
@@ -89,8 +94,9 @@ def _run_gunc(
         base_cmd.extend(["--min_mapped_genes", str(min_mapped_genes)])
 
     if isinstance(mags, MultiMAGSequencesDirFmt):
-        for sample_id, mags in mags.sample_dict():
+        for sample_id, _ in mags.sample_dict().items():
             cmd = deepcopy(base_cmd)
+            os.makedirs(results.path / sample_id, exist_ok=True)
             cmd.extend(
                 [
                     "--input_dir",
@@ -157,9 +163,60 @@ def collate_gunc_results(results: GUNCResultsDirectoryFormat) -> GUNCResultsDire
     return output
 
 
-# def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
-#     """Visualize the GUNC results."""
-#     run_command(
-#         ["gunc", "visualize", "--out_dir", output_dir],
-#         verbose=True,
-#     )
+def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
+    """Visualize the GUNC results."""
+    import pandas as pd
+
+    samples = {}
+    summary_data = []
+    base_cmd = [
+        "gunc", "plot", "--verbose"
+    ]
+    for sample_id, sample_path in results.file_dict().items():
+        samples[sample_id] = []
+        plots_path = Path(output_dir) / "plots" / sample_id
+        os.makedirs(plots_path, exist_ok=True)
+        diamond_outputs = Path(sample_path) / "diamond_output"
+        
+        # Read the all_levels data for this sample (includes all taxonomic levels)
+        summary_files = list(Path(sample_path).glob("gunc_output/*.all_levels.tsv"))
+        if summary_files:
+            for sf in summary_files:
+                df = pd.read_csv(sf, sep='\t')
+                for _, row in df.iterrows():
+                    summary_data.append({
+                        'sample_id': sample_id,
+                        'mag_id': row['genome'],
+                        'taxonomic_level': row['taxonomic_level'],
+                        'reference_representation_score': row['reference_representation_score'],
+                        'contamination_portion': row['contamination_portion'],
+                        'pass_gunc': row['pass.GUNC'],
+                        'n_contigs': row['n_contigs'],
+                        'n_genes_mapped': row['n_genes_mapped'],
+                        'clade_separation_score': row['clade_separation_score'],
+                        'genes_retained_index': row['genes_retained_index']
+                    })
+        
+        for result_file in list(diamond_outputs.glob("*")):
+            mag_name = result_file.name.split('.')[0]
+            samples[sample_id].append(mag_name)
+
+            cmd = base_cmd + [
+                "-d", str(result_file),
+                "-o", str(plots_path)
+            ]
+            run_command(cmd, verbose=True)
+
+    templates = [
+        TEMPLATES / "index.html",
+    ]
+    context = {
+        "samples": json.dumps(samples),
+        "summary_data": json.dumps(summary_data),
+    }
+
+    # Copy JS/CSS files
+    for d in ("js", "css"):
+        shutil.copytree(TEMPLATES / d, os.path.join(output_dir, d))
+
+    q2templates.render(templates, output_dir, context=context)
