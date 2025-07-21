@@ -184,13 +184,20 @@ def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
             for sf in summary_files:
                 df = pd.read_csv(sf, sep='\t')
                 for _, row in df.iterrows():
+                    # Convert pass.GUNC to proper boolean
+                    pass_gunc_value = row['pass.GUNC']
+                    if isinstance(pass_gunc_value, str):
+                        pass_gunc_bool = pass_gunc_value.lower() in ['true', 'pass', '1', 'yes']
+                    else:
+                        pass_gunc_bool = bool(pass_gunc_value)
+                    
                     summary_data.append({
                         'sample_id': sample_id,
                         'mag_id': row['genome'],
                         'taxonomic_level': row['taxonomic_level'],
                         'reference_representation_score': row['reference_representation_score'],
                         'contamination_portion': row['contamination_portion'],
-                        'pass_gunc': row['pass.GUNC'],
+                        'pass_gunc': pass_gunc_bool,
                         'n_contigs': row['n_contigs'],
                         'n_genes_mapped': row['n_genes_mapped'],
                         'clade_separation_score': row['clade_separation_score'],

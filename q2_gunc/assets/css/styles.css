@@ -3,6 +3,66 @@ body { font-family: 'Open Sans', Arial, sans-serif; background: #fff; font-size:
 .custom-dropdown { min-width: 180px; }
 .nav-tabs { padding-top: 10px;}
 
+/* Vega slider styling */
+.vega-bindings {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #dee2e6;
+}
+
+.vega-bind {
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center;
+  font-size: 12px;
+}
+
+.vega-bind span {
+  min-width: 140px;
+  margin-right: 10px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.vega-bind input[type="range"] {
+  flex: 1;
+  max-width: 180px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.vega-bind input[type="range"]::-webkit-slider-track {
+  background: #dee2e6;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.vega-bind input[type="range"]::-webkit-slider-thumb {
+  background: #007bff;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.vega-bind input[type="range"]::-moz-range-track {
+  background: #dee2e6;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+.vega-bind input[type="range"]::-moz-range-thumb {
+  background: #007bff;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
 /* SPINKIT */
 
 /*
