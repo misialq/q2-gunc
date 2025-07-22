@@ -7,32 +7,22 @@
 <script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
 <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@3.0.0/dist/d3-scale-chromatic.min.js"></script>
 <link href="css/styles.css" rel="stylesheet"/>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
   <div class="row justify-content-center" style="margin-top: 20px;">
-    <div class="col-12">
-      <!-- 1. Explanation Card -->
-      <div class="card mb-4 border-muted" id="metadata-card">
-        <div class="card-body p-3">
-          <div class="card-text" style="color: #495057;">
-            This visualization shows results of the GUNC analysis of the recovered MAGs.
-          </div>
-        </div>
-      </div>
+    <div class="col-lg-10">
       
       <!-- 2. Sample and MAG Selectors -->
       <div class="card mb-4 border-muted" id="selector-card">
         <div class="card-body p-3">
           <div class="row">
             <div class="col-md-4">
-              <label for="sample-selector" class="form-label">Select Sample:</label>
+              <label for="sample-selector" class="form-label">Sample:</label>
               <select class="form-select" id="sample-selector">
-                <option value="">-- All Samples --</option>
+                <option value="">-- All samples --</option>
               </select>
             </div>
             <div class="col-md-4">
@@ -48,7 +38,7 @@
               </select>
             </div>
             <div class="col-md-4">
-              <label for="mag-selector" class="form-label">Select MAG:</label>
+              <label for="mag-selector" class="form-label">MAG:</label>
               <select class="form-select" id="mag-selector" disabled>
                 <option value="">-- Select a MAG --</option>
               </select>
@@ -59,54 +49,41 @@
       
       <!-- 3. GUNC Summary Visualization -->
       <div class="card mb-4 border-muted" id="summary-card">
-        <div class="card-header">
-          <h5 class="mb-0">MAG Quality Summary</h5>
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h3 class="mb-1 mt-1">MAG quality summary</h3>
         </div>
         <div class="card-body p-3">
           <div class="row">
             <!-- Left Column: Plot -->
-            <div class="col-lg-6">
+            <div class="col-lg-7">
               <div id="gunc-summary-plot" style="min-height: 400px; width: 100%;"></div>
             </div>
             
             <!-- Right Column: Controls and Descriptions -->
-            <div class="col-lg-6">
-              <div class="mb-3">
-                <h6>Controls</h6>
+            <div class="col-lg-5">
+              <div class="mb-3" id="controls-container">
+                <h2 class="mb-4">Plot controls</h2>
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="filter-gunc-pass" checked>
-                  <label class="form-check-label" for="filter-gunc-pass">
-                    Show only MAGs that pass GUNC quality check
+                  <label class="form-check-label" style="font-weight: normal" for="filter-gunc-pass">
+                    Hide GUNC-failed MAGs
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="reverse-y-axis" checked>
+                  <label class="form-check-label" style="font-weight: normal" for="reverse-y-axis">
+                    Reverse Y-axis
                   </label>
                 </div>
               </div>
-              
-              <div class="mb-3">
-                <h6>Data Summary</h6>
-                <div id="data-summary" class="mb-2">
-                  <small class="text-info">
-                    <strong>Current View:</strong> <span id="data-count">Loading...</span>
-                  </small>
-                </div>
-              </div>
-              
-              <div class="mb-3">
-                <h6>Plot Guide</h6>
-                <small class="text-muted">
-                  <strong>Axes:</strong> X-axis shows reference representation score (higher = better quality), 
-                  Y-axis shows contamination level (lower = better quality).<br>
-                  <strong>Size:</strong> Point size indicates contig count.<br>
-                  <strong>Interaction:</strong> Click and drag to zoom, double-click to reset.<br>
-                  <strong>Colors:</strong> Viridis color scheme by sample.<br>
-                  <strong>Shapes:</strong> Circles = Pass, Triangles = Fail.
-                </small>
-              </div>
-              
-              <div class="mb-3">
-                <h6>Legend</h6>
-                <div id="plot-legend">
-                  <!-- Vega-Lite legend will be moved here if possible -->
-                </div>
+
+              <h2 style="margin-bottom: 10px; margin-top: 30px">Data summary</h2>
+              <div id="stats-container">
+<!--          <div class="d-flex gap-2">-->
+                <div><span class="badge text-bg-dark"></span> sample(s)</div>
+                <div><span class="badge text-bg-success"></span> passing MAGs</div>
+                <div><span class="badge text-bg-danger"></span> failing MAGs</div>
+<!--          </div>-->
               </div>
             </div>
           </div>
@@ -116,7 +93,7 @@
       <!-- 4. Sankey Diagrams -->
       <div class="card mb-4 border-muted" id="plot-card" style="display: none;">
         <div class="card-header">
-          <h5 class="mb-0">GUNC Sankey Diagram</h5>
+          <h3 class="mb-1 mt-1">GUNC Sankey diagram</h3>
         </div>
         <div class="card-body p-3">
           <div id="plot-container">
@@ -139,7 +116,7 @@
   let summaryData = {{ summary_data | safe }};
   
   // Create GUNC Summary Visualization
-  function createSummaryPlot(filteredData = null) {
+  function createSummaryPlot(filteredData = null, reverseY = true) {
     let dataToUse = filteredData || summaryData;
     
     // Debug: Log initial data
@@ -167,12 +144,6 @@
     if (dataToUse.length === 0) {
       console.warn('No data to plot after filtering');
       
-      // Update data summary to show no data
-      const dataSummaryElement = document.getElementById('data-count');
-      if (dataSummaryElement) {
-        dataSummaryElement.textContent = 'No MAGs match current filters';
-      }
-      
       // Show empty plot or message
       const spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
@@ -180,7 +151,7 @@
         "width": 400,
         "height": 400,
         "data": {"values": []},
-        "mark": {"type": "text", "text": "No data matches current filters", "fontSize": 16, "color": "#666"},
+        "mark": {"type": "text", "text": "No data matches current filters", "fontSize": 18, "color": "#666"},
         "encoding": {
           "x": {"value": 200},
           "y": {"value": 200}
@@ -191,40 +162,48 @@
       return;
     }
     
-    // Debug: Log data sample
-    console.log(`Sample of data being plotted:`, dataToUse.slice(0, 3));
-    
     // Calculate dynamic axis limits
-    const refScores = dataToUse.map(d => d.reference_representation_score);
-    const contamLevels = dataToUse.map(d => d.contamination_portion);
-    
-    const minRefScore = Math.min(...refScores);
-    const maxRefScore = Math.max(...refScores);
-    const maxContam = Math.max(...contamLevels);
-    
-    // Smart axis limits
-    const xMin = Math.max(0, minRefScore * 0.9); // 0.9x min value, but not below 0
-    const xMax = Math.min(1.1, maxRefScore * 1.1); // 1.1x max value, but cap at 1.1
-    const yMin = 0; // Always start contamination at 0
-    const yMax = Math.min(1.1, maxContam * 1.1); // 1.1x max contamination, but cap at 1.1
+    // Filter out null/undefined/non-numeric values
+    const refScores = dataToUse.map(d => Number(d.reference_representation_score)).filter(v => typeof v === 'number' && !isNaN(v));
+    const contamLevels = dataToUse.map(d => Number(d.contamination_portion)).filter(v => typeof v === 'number' && !isNaN(v));
+
+    let minRefScore = refScores.length > 0 ? Math.min(...refScores) : 0;
+    let maxRefScore = refScores.length > 0 ? Math.max(...refScores) : 1;
+    let maxContam = contamLevels.length > 0 ? Math.max(...contamLevels) : 1;
+
+    // Smart axis limits with fallbacks
+    let xMin = Math.max(0, minRefScore * 0.9).toFixed(2); // 0.9x min value, but not below 0
+    let xMax = Math.min(1.1, maxRefScore * 1.1).toFixed(2); // 1.1x max value, but cap at 1.1
+    let yMin = 0; // Always start contamination at 0
+    let yMax = Math.min(1.1, maxContam * 1.1).toFixed(2); // 1.1x max contamination, but cap at 1.1
+
+    // If ranges are invalid, set to defaults and warn
+    if (!isFinite(xMin) || !isFinite(xMax) || xMin === xMax) {
+      console.warn('Invalid X axis range, using default [0,1]');
+      xMin = 0; xMax = 1;
+    }
+    if (!isFinite(yMin) || !isFinite(yMax) || yMin === yMax) {
+      console.warn('Invalid Y axis range, using default [0,1]');
+      yMin = 0; yMax = 1;
+    }
     
     console.log(`Axis limits - X: [${xMin}, ${xMax}], Y: [${yMin}, ${yMax}]`);
-    
-    // Update data summary display with unique MAG counts
-    const dataSummaryElement = document.getElementById('data-count');
-    if (dataSummaryElement) {
-      const uniqueMAGs = new Set(dataToUse.map(d => d.mag_id)).size;
-      const sampleCount = new Set(dataToUse.map(d => d.sample_id)).size;
-      
-      // Count passes more robustly
-      const passCount = dataToUse.filter(d => {
-        const passValue = d.pass_gunc;
-        return passValue === true || passValue === "True" || passValue === "true" || passValue === "Pass" || passValue === "pass";
-      }).length;
-      const failCount = dataToUse.length - passCount;
-      
-      dataSummaryElement.textContent = `${uniqueMAGs} unique MAGs from ${sampleCount} sample(s) (${passCount} pass, ${failCount} fail)`;
-    }
+
+    // Update summary-card badge spans
+    const sampleCountSpan = document.querySelector('#summary-card .badge.text-bg-dark');
+    const passCountSpan = document.querySelector('#summary-card .badge.text-bg-success');
+    const failCountSpan = document.querySelector('#summary-card .badge.text-bg-danger');
+
+    const sampleCount = new Set(dataToUse.map(d => d.sample_id)).size;
+    const passCount = dataToUse.filter(d => {
+      const passValue = d.pass_gunc;
+      return passValue === true || passValue === "True" || passValue === "true" || passValue === "Pass" || passValue === "pass";
+    }).length;
+    const failCount = dataToUse.length - passCount;
+
+    if (sampleCountSpan) sampleCountSpan.textContent = sampleCount;
+    if (passCountSpan) passCountSpan.textContent = passCount;
+    if (failCountSpan) failCountSpan.textContent = failCount;
     
     // Normalize pass_gunc field to boolean for Vega-Lite
     const normalizedData = dataToUse.map(d => ({
@@ -235,10 +214,10 @@
     console.log(`Normalized data:`, normalizedData);
     
     const spec = {
-      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
       "description": "MAG Quality Summary from GUNC Analysis",
-      "width": 400,
-      "height": 400,
+      "width": "container",
+      "height": 500,
       "data": {
         "values": normalizedData
       },
@@ -256,7 +235,7 @@
             "min": xMin,
             "max": xMax,
             "step": 0.01,
-            "name": "Min Reference Score: "
+            "name": "Min. reference score:"
           }
         },
         {
@@ -267,10 +246,18 @@
             "min": yMin,
             "max": yMax,
             "step": 0.01,
-            "name": "Max Contamination: "
+            "name": "Max. contamination:"
           }
         }
       ],
+      "config": {
+        "legend": {
+          "orient": "bottom",
+          "titleFontSize": 13,
+          "labelFontSize": 12,
+          "columns": 2
+        }
+      },
       "transform": [
         {
           "filter": "datum.reference_representation_score >= ref_score_min"
@@ -289,20 +276,20 @@
           "type": "quantitative",
           "scale": {"domain": [xMin, xMax]},
           "title": "Reference Representation Score",
-          "axis": {"grid": true, "gridOpacity": 0.6}
+          "axis": {"grid": true, "gridOpacity": 0.6, "titleFontSize": 15, "labelFontSize": 13}
         },
         "y": {
           "field": "contamination_portion", 
           "type": "quantitative",
-          "scale": {"domain": [yMin, yMax], "reverse": true},
+          "scale": {"domain": [yMin, yMax], "reverse": reverseY},
           "title": "Contamination Portion",
-          "axis": {"grid": true, "gridOpacity": 0.6}
+          "axis": {"grid": true, "gridOpacity": 0.6, "titleFontSize": 15, "labelFontSize": 13}
         },
         "size": {
           "field": "n_contigs",
           "type": "quantitative",
-          "scale": {"range": [50, 400]},
-          "title": "Number of Contigs"
+          "scale": {"range": [100, 400]},
+          "title": "Number of contigs"
         },
         "color": {
           "field": "sample_id",
@@ -340,27 +327,20 @@
     }).then(result => {
       // Add custom styling to the sliders
       const container = document.getElementById('gunc-summary-plot');
-      const sliders = container.querySelectorAll('.vega-bindings');
-      
-      if (sliders.length > 0) {
-        sliders.forEach(slider => {
-          slider.style.marginBottom = '10px';
-          slider.style.fontSize = '12px';
-        });
-        
-        // Try to organize sliders by axis
-        const allSliders = container.querySelectorAll('.vega-bind');
-        allSliders.forEach((slider, index) => {
-          slider.style.marginBottom = '8px';
-          slider.style.display = 'block';
-          
-          // Style the range inputs
-          const rangeInput = slider.querySelector('input[type="range"]');
-          if (rangeInput) {
-            rangeInput.style.width = '150px';
-            rangeInput.style.marginLeft = '10px';
-          }
-        });
+
+      // Move the sliders container to the controls-container div
+      const controlsContainer = document.getElementById('controls-container');
+      const sliders = container.querySelector('.vega-bindings');
+      if (controlsContainer && sliders) {
+        console.log("Moving Vega-Lite sliders to controls-container...");
+        console.log("controlsContainer:", controlsContainer);
+        console.log("sliders:", sliders);
+        // If a previous .vega-bindings exists in controlsContainer, remove it before appending the new one
+        const oldBindings = controlsContainer.querySelector('.vega-bindings');
+        if (oldBindings && oldBindings !== sliders) {
+          oldBindings.remove();
+        }
+        controlsContainer.appendChild(sliders);
       }
     }).catch(console.error);
   }
@@ -372,9 +352,10 @@
     const plotCard = document.getElementById('plot-card');
     const plotContainer = document.getElementById('plot-container');
     const loadingSpinner = document.getElementById('loading-spinner');
+    const reverseYAxisCheckbox = document.getElementById('reverse-y-axis');
     
     // Create the summary plot
-    createSummaryPlot();
+    createSummaryPlot(null, reverseYAxisCheckbox ? reverseYAxisCheckbox.checked : true);
     
     // Add event listener for GUNC pass filter checkbox
     const filterCheckbox = document.getElementById('filter-gunc-pass');
@@ -387,15 +368,21 @@
     if (levelSelector) {
       levelSelector.addEventListener('change', updatePlot);
     }
+
+    // Add event listener for Y-axis reversal checkbox
+    if (reverseYAxisCheckbox) {
+      reverseYAxisCheckbox.addEventListener('change', updatePlot);
+    }
     
     // Function to update plot based on current selections
     function updatePlot() {
       const selectedSample = sampleSelector.value;
+      const reverseY = reverseYAxisCheckbox ? reverseYAxisCheckbox.checked : true;
       if (selectedSample === "") {
-        createSummaryPlot();
+        createSummaryPlot(null, reverseY);
       } else {
         const filteredData = summaryData.filter(item => item.sample_id === selectedSample);
-        createSummaryPlot(filteredData);
+        createSummaryPlot(filteredData, reverseY);
       }
     }
     
