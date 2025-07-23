@@ -120,6 +120,17 @@ def _run_gunc(
     return results
 
 
+def _run_gunc_plot(result_file: str, output_dir: str, sample_id: str = "") -> None:
+    plots_path = Path(output_dir) / "plots" / sample_id
+    os.makedirs(plots_path, exist_ok=True)
+    cmd = [
+        "gunc", "plot", "--verbose",
+        "-d", result_file,
+        "-o", str(plots_path)
+    ]
+    run_command(cmd, verbose=True)
+
+
 def run_gunc(
     ctx,
     mags,
@@ -169,15 +180,7 @@ def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
 
     samples = {}
     summary_data = []
-    base_cmd = [
-        "gunc", "plot", "--verbose"
-    ]
     for sample_id, sample_path in results.file_dict().items():
-        samples[sample_id] = []
-        plots_path = Path(output_dir) / "plots" / sample_id
-        os.makedirs(plots_path, exist_ok=True)
-        diamond_outputs = Path(sample_path) / "diamond_output"
-        
         # Read the all_levels data for this sample (includes all taxonomic levels)
         summary_files = list(Path(sample_path).glob("gunc_output/*.all_levels.tsv"))
         if summary_files:
@@ -203,16 +206,21 @@ def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
                         'clade_separation_score': row['clade_separation_score'],
                         'genes_retained_index': row['genes_retained_index']
                     })
-        
-        for result_file in list(diamond_outputs.glob("*")):
-            mag_name = result_file.name.split('.')[0]
-            samples[sample_id].append(mag_name)
 
-            cmd = base_cmd + [
-                "-d", str(result_file),
-                "-o", str(plots_path)
-            ]
-            run_command(cmd, verbose=True)
+        samples[sample_id] = []
+        diamond_outputs = Path(sample_path) / "diamond_output"
+        plots = Path(sample_path) / "plots"
+        for result_file in list(diamond_outputs.glob("*")):
+            mag_id = result_file.name.split('.')[0]
+            samples[sample_id].append(mag_id)
+
+            plot_fp = plots / f"{mag_id}.viz.html"
+            if plot_fp.exists():
+                dest = Path(output_dir) / "plots" / sample_id
+                os.makedirs(dest, exist_ok=True)
+                shutil.copy(plot_fp, dest)
+            else:
+                _run_gunc_plot(str(result_file), output_dir, sample_id)
 
     templates = [
         TEMPLATES / "index.html",
