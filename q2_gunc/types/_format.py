@@ -8,6 +8,7 @@
 import json
 
 import pandas as pd
+from bs4 import BeautifulSoup
 from q2_types._util import FileDictMixin
 from q2_types.feature_data import ProteinFASTAFormat
 from q2_types.genome_data import OrthologFileFmt
@@ -50,6 +51,16 @@ class GUNCGeneCountsFormat(model.TextFileFormat):
             raise ValidationError("GUNC gene counts file is not valid JSON.")
 
 
+class GUNCHTMLPlotFormat(model.TextFileFormat):
+    def _validate_(self, level):
+        try:
+            with open(self.path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                BeautifulSoup(content, 'html.parser')
+        except Exception as e:
+            raise ValidationError(f"GUNC HTML plot is not valid HTML: {e}")
+
+
 class GUNCResultsDirectoryFormat(model.DirectoryFormat):
     diamond_output = model.FileCollection(
         r"(?:.+/)?diamond_output/.*.out", format=OrthologFileFmt
@@ -64,6 +75,7 @@ class GUNCResultsDirectoryFormat(model.DirectoryFormat):
         r"(?:.+/)?gunc_output/.*.all_levels.tsv", format=GUNCResultsFormat
     )
     gunc_max_css = model.File(r"(?:.+/)?GUNC.*.maxCSS_level.tsv", format=GUNCResultsFormat)
+    plots = model.FileCollection(r"(?:.+/)?plots/.*.viz.html", format=GUNCHTMLPlotFormat, optional=True)
 
     @diamond_output.set_path_maker
     def diamond_output_path_maker(self, sample_id, mag_id):
@@ -79,6 +91,11 @@ class GUNCResultsDirectoryFormat(model.DirectoryFormat):
     def gunc_results_path_maker(self, sample_id, mag_id):
         prefix = f"{sample_id}/" if sample_id else ""
         return f"{prefix}gunc_output/{mag_id}.all_levels.tsv"
+
+    @plots.set_path_maker
+    def plots_path_maker(self, sample_id, mag_id):
+        prefix = f"{sample_id}/" if sample_id else ""
+        return f"{prefix}plots/{mag_id}.viz.html"
 
     def file_dict(self):
         subdir = self.path / "gunc_output"

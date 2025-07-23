@@ -20,7 +20,7 @@ from q2_gunc.types import (
     GUNCResultsFormat,
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
-    GUNCGeneCountsFormat,
+    GUNCGeneCountsFormat, GUNCHTMLPlotFormat,
 )
 
 citations = Citations.load("citations.bib", package="q2_gunc")
@@ -136,6 +136,7 @@ plugin.register_formats(
     GUNCGeneCountsFormat,
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
+    GUNCHTMLPlotFormat
 )
 plugin.register_semantic_types(GUNCResults, GUNCDB)
 plugin.register_semantic_type_to_format(GUNCResults, GUNCResultsDirectoryFormat)

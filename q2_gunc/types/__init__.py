@@ -11,6 +11,7 @@ from ._format import (
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
     GUNCGeneCountsFormat,
+    GUNCHTMLPlotFormat
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "GUNCDB",
     "GUNCDatabaseDirFmt",
     "GUNCGeneCountsFormat",
+    "GUNCHTMLPlotFormat"
 ]
