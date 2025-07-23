@@ -15,64 +15,72 @@
 {% block content %}
 <div class="w-full min-h-screen bg-base-200 flex flex-col items-center py-8">
   <div class="w-full">
+    <div class="flex w-full">
     <!-- 1. Sample and MAG Selectors -->
-    <div class="card bg-base-100 shadow-sm mb-6 ml-4 mr-4" id="selector-card">
-      <div class="card-body">
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <fieldset class="fieldset text-sm">
-              <legend class="fieldset-legend mb-1">Selections</legend>
+      <div class="w-5/7">
+        <div class="card bg-base-100 shadow-md mb-6 ml-4 mr-4" id="selector-card">
+          <div class="card-body">
+            <h2 class="card-title mb-1 mt-1">Plot controls</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+              <div class="flex-1">
+                <fieldset class="fieldset text-sm">
+                  <label class="label">Sample</label>
+                  <select class="select select-sm w-full" id="sample-selector">
+                    <option value="" selected>-- All samples --</option>
+                  </select>
 
-              <label class="label">Sample</label>
-              <select class="select select-sm w-full" id="sample-selector">
-                <option value="" selected>-- All samples --</option>
-              </select>
+                  <label class="label">Taxonomic level</label>
+                  <select class="select select-sm w-full" id="level-selector">
+                    <option value="kingdom">Kingdom</option>
+                    <option value="phylum">Phylum</option>
+                    <option value="class">Class</option>
+                    <option value="order">Order</option>
+                    <option value="family">Family</option>
+                    <option value="genus">Genus</option>
+                    <option value="species" selected>Species</option>
+                  </select>
 
-              <label class="label">Taxonomic level</label>
-              <select class="select select-sm w-full" id="level-selector">
-                <option value="kingdom">Kingdom</option>
-                <option value="phylum">Phylum</option>
-                <option value="class">Class</option>
-                <option value="order">Order</option>
-                <option value="family">Family</option>
-                <option value="genus">Genus</option>
-                <option value="species" selected>Species</option>
-              </select>
-
-              <label class="label">MAG</label>
-              <select class="select select-sm w-full" id="mag-selector">
-                <option value="">-- Select a MAG --</option>
-              </select>
-            </fieldset>
-          </div>
-          <div class="flex-1 items-start">
-            <fieldset class="fieldset text-sm" id="controls-container">
-              <legend class="fieldset-legend mb-1">Plot controls</legend>
-              <p>
-                <input type="checkbox" class="checkbox checkbox-sm" id="filter-gunc-pass">
-                <span>Show GUNC-failed MAGs</span>
-              </p>
-              <p>
-                <input type="checkbox" class="checkbox checkbox-sm" id="reverse-y-axis" checked="checked">
-                <span>Reverse Y-axis</span>
-              </p>
-            </fieldset>
-          </div>
-
-          <div class="flex-1">
-            <fieldset class="fieldset text-sm" id="stats-container">
-              <legend class="fieldset-legend mb-1">Data summary</legend>
-              <div class="items-center">Sample(s):<span class="badge badge-sm badge-soft badge-info ml-2"></span></div>
-              <div class="flex items-center">Passing MAGs:<span class="badge badge-sm badge-soft badge-success ml-2"></span></div>
-              <div class="items-center">Failing MAGs:<span class="badge badge-sm badge-soft badge-error ml-2"></span></div>
-            </fieldset>
+                  <label class="label">MAG</label>
+                  <select class="select select-sm w-full" id="mag-selector">
+                    <option value="">-- Select a MAG --</option>
+                  </select>
+                </fieldset>
+              </div>
+            <div class="flex-1 items-start">
+              <fieldset class="fieldset text-sm" id="controls-container">
+                <p>
+                  <input type="checkbox" class="checkbox checkbox-sm" id="filter-gunc-pass">
+                  <span>Show GUNC-failed MAGs</span>
+                </p>
+                <p>
+                  <input type="checkbox" class="checkbox checkbox-sm" id="reverse-y-axis" checked="checked">
+                  <span>Reverse Y-axis</span>
+                </p>
+              </fieldset>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <div class="w-2/7">
+        <div class="card bg-base-100 shadow-md mb-6 ml-4 mr-4" id="selector-card">
+          <div class="card-body">
+            <h2 class="card-title mb-1 mt-1">Data summary</h2>
+            <div class="flex-1">
+              <fieldset class="fieldset text-sm" id="stats-container">
+                <legend class="fieldset-legend mb-1">Selection-based</legend>
+                <div class="items-center">Sample(s):<span class="badge badge-md badge-outline badge-info ml-2"></span></div>
+                <div class="flex items-center">Passing MAGs:<span class="badge badge-md badge-outline badge-success ml-2"></span></div>
+                <div class="items-center">Failing MAGs:<span class="badge badge-md badge-outline badge-error ml-2"></span></div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- 2. GUNC Summary Visualization -->
-    <div class="card bg-base-100 shadow-sm mb-6 ml-4 mr-4" id="summary-card">
+    <div class="card bg-base-100 shadow-md mb-6 ml-4 mr-4" id="summary-card">
       <div class="card-body p-6">
         <h2 class="card-title mb-1 mt-1">MAG quality summary</h2>
         <div id="gunc-summary-plot" class="min-h-[400px] w-full"></div>
@@ -80,7 +88,7 @@
     </div>
 
     <!-- 3. Sankey Diagrams -->
-    <div class="card bg-base-100 shadow-sm mb-6 ml-4 mr-4" id="plot-card" style="display: none;">
+    <div class="card bg-base-100 shadow-md mb-6 ml-4 mr-4" id="plot-card" style="display: none;">
       <div class="card-body p-6">
         <h2 class="card-title mb-4">GUNC Sankey diagram</h2>
         <div id="plot-container"></div>
