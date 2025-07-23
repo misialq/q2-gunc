@@ -14,4 +14,10 @@ except ModuleNotFoundError:
 
 from .gunc import _run_gunc, run_gunc, download_gunc_db, collate_gunc_results, visualize
 
-__all__ = ["_run_gunc", "run_gunc", "download_gunc_db", "collate_gunc_results", "visualize"]
+__all__ = [
+    "_run_gunc",
+    "run_gunc",
+    "download_gunc_db",
+    "collate_gunc_results",
+    "visualize",
+]

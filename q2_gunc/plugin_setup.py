@@ -13,14 +13,22 @@ from q2_types.reference_db import ReferenceDB, Diamond
 from q2_types.sample_data import SampleData
 from qiime2.core.type import Range, Int, Bool, Str, Choices, List
 from qiime2.plugin import Citations, Plugin, Collection
-from q2_gunc import __version__, _run_gunc, run_gunc, download_gunc_db, collate_gunc_results, visualize
+from q2_gunc import (
+    __version__,
+    _run_gunc,
+    run_gunc,
+    download_gunc_db,
+    collate_gunc_results,
+    visualize,
+)
 from q2_gunc.types import (
     GUNCDB,
     GUNCResults,
     GUNCResultsFormat,
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
-    GUNCGeneCountsFormat, GUNCHTMLPlotFormat,
+    GUNCGeneCountsFormat,
+    GUNCHTMLPlotFormat,
 )
 
 citations = Citations.load("citations.bib", package="q2_gunc")
@@ -121,13 +129,15 @@ plugin.visualizers.register_function(
     inputs={
         "results": GUNCResults,
     },
-    parameters={},
-    input_descriptions={
-        "results": "GUNC results to visualize."
+    parameters={
+        "threads": Int % Range(1, None),
     },
-    parameter_descriptions={},
-    name="",
-    description="",
+    input_descriptions={"results": "GUNC results to visualize."},
+    parameter_descriptions={
+        "threads": "Number of threads to use for parallel processing.",
+    },
+    name="Visualize GUNC results.",
+    description="Visualize GUNC results with optional parallelization.",
     citations=[],
 )
 
@@ -136,7 +146,7 @@ plugin.register_formats(
     GUNCGeneCountsFormat,
     GUNCResultsDirectoryFormat,
     GUNCDatabaseDirFmt,
-    GUNCHTMLPlotFormat
+    GUNCHTMLPlotFormat,
 )
 plugin.register_semantic_types(GUNCResults, GUNCDB)
 plugin.register_semantic_type_to_format(GUNCResults, GUNCResultsDirectoryFormat)

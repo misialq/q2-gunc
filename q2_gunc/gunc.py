@@ -15,6 +15,8 @@ from copy import deepcopy
 from importlib import resources
 from pathlib import Path
 from typing import Union
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import q2templates
 from q2_types.feature_data_mag import MAGSequencesDirFmt
@@ -123,12 +125,59 @@ def _run_gunc(
 def _run_gunc_plot(result_file: str, output_dir: str, sample_id: str = "") -> None:
     plots_path = Path(output_dir) / "plots" / sample_id
     os.makedirs(plots_path, exist_ok=True)
-    cmd = [
-        "gunc", "plot", "--verbose",
-        "-d", result_file,
-        "-o", str(plots_path)
-    ]
+    cmd = ["gunc", "plot", "--verbose", "-d", result_file, "-o", str(plots_path)]
     run_command(cmd, verbose=True)
+
+
+def process_sample(sample_id, sample_path, output_dir):
+    """Process a single sample for visualization (used for parallelization)."""
+    summary_data, sample_mags = [], []
+    summary_files = list(Path(sample_path).glob("gunc_output/*.all_levels.tsv"))
+    for sf in summary_files:
+        df = pd.read_csv(sf, sep="\t")
+        for _, row in df.iterrows():
+            pass_gunc_value = row["pass.GUNC"]
+            if isinstance(pass_gunc_value, str):
+                pass_gunc_bool = pass_gunc_value.lower() in [
+                    "true",
+                    "pass",
+                    "1",
+                    "yes",
+                ]
+            else:
+                pass_gunc_bool = bool(pass_gunc_value)
+            summary_data.append(
+                {
+                    "sample_id": sample_id,
+                    "mag_id": row["genome"],
+                    "taxonomic_level": row["taxonomic_level"],
+                    "reference_representation_score": row[
+                        "reference_representation_score"
+                    ],
+                    "contamination_portion": row["contamination_portion"],
+                    "pass_gunc": pass_gunc_bool,
+                    "n_contigs": row["n_contigs"],
+                    "n_genes_mapped": row["n_genes_mapped"],
+                    "clade_separation_score": row["clade_separation_score"],
+                    "genes_retained_index": row["genes_retained_index"],
+                }
+            )
+
+
+    diamond_outputs = Path(sample_path) / "diamond_output"
+    plots = Path(sample_path) / "plots"
+    for result_file in list(diamond_outputs.glob("*")):
+        mag_id = result_file.name.split(".")[0]
+        sample_mags.append(mag_id)
+        plot_fp = plots / f"{mag_id}.viz.html"
+        if plot_fp.exists():
+            dest = Path(output_dir) / "plots" / sample_id
+            os.makedirs(dest, exist_ok=True)
+            shutil.copy(plot_fp, dest)
+        else:
+            _run_gunc_plot(str(result_file), output_dir, sample_id)
+
+    return sample_id, sample_mags, summary_data
 
 
 def run_gunc(
@@ -159,12 +208,14 @@ def run_gunc(
         (result,) = _run(mag, **kwargs)
         results.append(result)
 
-    collated, = _collate(results)
+    (collated,) = _collate(results)
 
     return collated
 
 
-def collate_gunc_results(results: GUNCResultsDirectoryFormat) -> GUNCResultsDirectoryFormat:
+def collate_gunc_results(
+    results: GUNCResultsDirectoryFormat,
+) -> GUNCResultsDirectoryFormat:
     """Collate the GUNC results."""
     output = GUNCResultsDirectoryFormat()
     for result in results:
@@ -174,53 +225,33 @@ def collate_gunc_results(results: GUNCResultsDirectoryFormat) -> GUNCResultsDire
     return output
 
 
-def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
-    """Visualize the GUNC results."""
-    import pandas as pd
-
+def visualize(
+    output_dir: str, results: GUNCResultsDirectoryFormat, threads: int = 1
+) -> None:
+    """Visualize the GUNC results.
+    Parameters
+    ----------
+    output_dir : str
+        Output directory for visualization files.
+    results : GUNCResultsDirectoryFormat
+        GUNC results to visualize.
+    threads : int, optional
+        Number of threads to use for parallel processing (default is 1).
+    """
     samples = {}
     summary_data = []
-    for sample_id, sample_path in results.file_dict().items():
-        # Read the all_levels data for this sample (includes all taxonomic levels)
-        summary_files = list(Path(sample_path).glob("gunc_output/*.all_levels.tsv"))
-        if summary_files:
-            for sf in summary_files:
-                df = pd.read_csv(sf, sep='\t')
-                for _, row in df.iterrows():
-                    # Convert pass.GUNC to proper boolean
-                    pass_gunc_value = row['pass.GUNC']
-                    if isinstance(pass_gunc_value, str):
-                        pass_gunc_bool = pass_gunc_value.lower() in ['true', 'pass', '1', 'yes']
-                    else:
-                        pass_gunc_bool = bool(pass_gunc_value)
-                    
-                    summary_data.append({
-                        'sample_id': sample_id,
-                        'mag_id': row['genome'],
-                        'taxonomic_level': row['taxonomic_level'],
-                        'reference_representation_score': row['reference_representation_score'],
-                        'contamination_portion': row['contamination_portion'],
-                        'pass_gunc': pass_gunc_bool,
-                        'n_contigs': row['n_contigs'],
-                        'n_genes_mapped': row['n_genes_mapped'],
-                        'clade_separation_score': row['clade_separation_score'],
-                        'genes_retained_index': row['genes_retained_index']
-                    })
 
-        samples[sample_id] = []
-        diamond_outputs = Path(sample_path) / "diamond_output"
-        plots = Path(sample_path) / "plots"
-        for result_file in list(diamond_outputs.glob("*")):
-            mag_id = result_file.name.split('.')[0]
-            samples[sample_id].append(mag_id)
-
-            plot_fp = plots / f"{mag_id}.viz.html"
-            if plot_fp.exists():
-                dest = Path(output_dir) / "plots" / sample_id
-                os.makedirs(dest, exist_ok=True)
-                shutil.copy(plot_fp, dest)
-            else:
-                _run_gunc_plot(str(result_file), output_dir, sample_id)
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        futures = {
+            executor.submit(
+                process_sample, sample_id, sample_path, output_dir
+            ): sample_id
+            for sample_id, sample_path in results.file_dict().items()
+        }
+        for future in as_completed(futures):
+            sample_id, sample_mags, local_summary_data = future.result()
+            samples[sample_id] = sample_mags
+            summary_data.extend(local_summary_data)
 
     templates = [
         TEMPLATES / "index.html",

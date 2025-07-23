@@ -54,9 +54,9 @@ class GUNCGeneCountsFormat(model.TextFileFormat):
 class GUNCHTMLPlotFormat(model.TextFileFormat):
     def _validate_(self, level):
         try:
-            with open(self.path, 'r', encoding='utf-8') as file:
+            with open(self.path, "r", encoding="utf-8") as file:
                 content = file.read()
-                BeautifulSoup(content, 'html.parser')
+                BeautifulSoup(content, "html.parser")
         except Exception as e:
             raise ValidationError(f"GUNC HTML plot is not valid HTML: {e}")
 
@@ -74,8 +74,12 @@ class GUNCResultsDirectoryFormat(model.DirectoryFormat):
     gunc_results = model.FileCollection(
         r"(?:.+/)?gunc_output/.*.all_levels.tsv", format=GUNCResultsFormat
     )
-    gunc_max_css = model.File(r"(?:.+/)?GUNC.*.maxCSS_level.tsv", format=GUNCResultsFormat)
-    plots = model.FileCollection(r"(?:.+/)?plots/.*.viz.html", format=GUNCHTMLPlotFormat, optional=True)
+    gunc_max_css = model.File(
+        r"(?:.+/)?GUNC.*.maxCSS_level.tsv", format=GUNCResultsFormat
+    )
+    plots = model.FileCollection(
+        r"(?:.+/)?plots/.*.viz.html", format=GUNCHTMLPlotFormat, optional=True
+    )
 
     @diamond_output.set_path_maker
     def diamond_output_path_maker(self, sample_id, mag_id):
