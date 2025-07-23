@@ -108,7 +108,7 @@ class GUNCResultsDirectoryFormat(model.DirectoryFormat):
         else:
             sample_dict = {}
             for sample_dir in self.path.iterdir():
-                sample_dict[sample_dir.name] = sample_dir
+                sample_dict[sample_dir.name] = str(sample_dir)
             return sample_dict
 
 

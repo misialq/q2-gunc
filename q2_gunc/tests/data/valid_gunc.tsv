@@ -1,0 +1,2 @@
+genome	n_genes_called	n_genes_mapped	n_contigs	taxonomic_level	proportion_genes_retained_in_major_clades	genes_retained_index	clade_separation_score	contamination_portion	n_effective_surplus_clades	mean_hit_identity	reference_representation_score	pass.GUNC
+foo	1	1	1	level	0.1	0.2	0.3	0.4	0.5	0.6	0.7	True 

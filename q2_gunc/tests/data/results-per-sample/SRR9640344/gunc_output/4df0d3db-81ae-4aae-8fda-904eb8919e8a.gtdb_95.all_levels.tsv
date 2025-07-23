@@ -1,0 +1,8 @@
+genome	n_genes_called	n_genes_mapped	n_contigs	taxonomic_level	proportion_genes_retained_in_major_clades	genes_retained_index	clade_separation_score	contamination_portion	n_effective_surplus_clades	mean_hit_identity	reference_representation_score	pass.GUNC
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	kingdom	1.0	0.97	0.0	0.0	0.0	0.84	0.82	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	phylum	0.99	0.96	0.0	0.0	0.0	0.84	0.81	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	class	0.98	0.95	0.0	0.0	0.0	0.85	0.8	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	order	0.97	0.94	0.33	0.02	0.04	0.85	0.8	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	family	0.95	0.92	0.0	0.0	0.0	0.85	0.78	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	genus	0.93	0.9	0.0	0.0	0.0	0.86	0.77	True
+4df0d3db-81ae-4aae-8fda-904eb8919e8a	1259	1221	295	species	0.75	0.73	0.08	0.87	10.98	0.87	0.63	True

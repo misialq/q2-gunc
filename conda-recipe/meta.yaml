@@ -1,0 +1,54 @@
+package:
+  name: q2-annotate
+  version: {{ PLUGIN_VERSION }}
+source:
+  path: ..
+build:
+  script: make install
+requirements:
+  host:
+  - python {{ python }}
+  - setuptools
+  - versioningit
+  - wheel
+  run:
+  - altair
+  - beautifulsoup4
+  - bracken
+  - busco >=5.5.0
+  - diamond
+  - eggnog-mapper >=2.1.10
+  - gfatools
+  - kaiju
+  - kraken2
+  - metabat2
+  - pandas
+  - parameterized
+  - qiime2 >={{ qiime2 }}
+  - q2-types >={{ q2_types }}
+  - q2templates >={{ q2templates }}
+  - q2-assembly >={{ q2_assembly }}
+  - q2-quality-control >={{ q2_quality_control }}
+  - samtools
+  - semibin >=2.0.0
+  - seqtk
+  - tqdm
+  - xmltodict
+  - pyhmmer
+  build:
+  - python {{ python }}
+  - setuptools
+  - versioningit
+test:
+  requires:
+  - parameterized
+  - pytest-xdist
+  imports:
+  - q2_annotate
+  - qiime2.plugins.annotate
+  commands:
+  - pytest --pyargs q2_annotate -n 4
+about:
+  home: https://github.com/bokulich-lab/q2-annotate
+  license: BSD-3-Clause
+  license_family: BSD

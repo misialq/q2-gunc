@@ -1,0 +1,3 @@
+genome	n_genes_called	n_genes_mapped	n_contigs	taxonomic_level	proportion_genes_retained_in_major_clades	genes_retained_index	clade_separation_score	contamination_portion	n_effective_surplus_clades	mean_hit_identity	reference_representation_score	pass.GUNC
+0c20367d-4775-43f1-90c6-1a36afc5e4da	1643	1610	338	kingdom	1.0	0.98	0.0	0.0	0.0	0.99	0.97	True
+1da59757-769b-4713-923d-e3d2e60690c9	311	309	79	kingdom	1.0	0.99	0.0	0.0	0.0	0.98	0.98	True

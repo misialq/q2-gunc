@@ -7,23 +7,23 @@
 # ----------------------------------------------------------------------------
 import glob
 import json
+import logging
 import os
 import shutil
 import subprocess
-import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from importlib import resources
 from pathlib import Path
 from typing import Union
-import pandas as pd
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import cssutils
 
+import cssutils
+import pandas as pd
 import q2templates
 from q2_types.feature_data_mag import MAGSequencesDirFmt
 from q2_types.per_sample_sequences import MultiMAGSequencesDirFmt
 
-from .types import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt, GUNCResultsFormat
+from .types import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt
 
 TEMPLATES = resources.files("q2_gunc") / "assets"
 EXTERNAL_CMD_WARNING = (
@@ -35,17 +35,25 @@ EXTERNAL_CMD_WARNING = (
 )
 
 
-def run_command(cmd, env=None, verbose=True, pipe=False, **kwargs):
+def run_command(cmd, env=None, verbose=True, **kwargs):
+    """
+    Run a command using subprocess, optionally printing the command and capturing output.
+
+    Parameters
+    ----------
+    cmd : list
+        Command and arguments to execute.
+    env : dict, optional
+        Environment variables for the subprocess.
+    verbose : bool, optional
+        Whether to print the command before running.
+    **kwargs : dict
+        Additional arguments to subprocess.run.
+    """
     if verbose:
         print(EXTERNAL_CMD_WARNING)
         print("\nCommand:", end=" ")
         print(" ".join(cmd), end="\n\n")
-
-    if pipe:
-        result = subprocess.run(
-            cmd, env=env, check=True, capture_output=True, text=True
-        )
-        return result
 
     if env:
         subprocess.run(cmd, env=env, check=True, **kwargs)
@@ -88,13 +96,13 @@ def _run_gunc(
         "--file_suffix",
         ".fasta",
         "--detailed_output",
+        "--min_mapped_genes",
+        str(min_mapped_genes),
     ]
     if sensitive:
         base_cmd.append("--sensitive")
     if use_species_level:
         base_cmd.append("--use_species_level")
-    if min_mapped_genes is not None:
-        base_cmd.extend(["--min_mapped_genes", str(min_mapped_genes)])
 
     if isinstance(mags, MultiMAGSequencesDirFmt):
         for sample_id, _ in mags.sample_dict().items():
@@ -124,29 +132,51 @@ def _run_gunc(
 
 
 def _run_gunc_plot(result_file: str, output_dir: str, sample_id: str = "") -> None:
+    """
+    Run GUNC plot command for a given result file and copy or generate the plot.
+
+    Parameters
+    ----------
+    result_file : str
+        Path to the result file to plot.
+    output_dir : str
+        Output directory for plots.
+    sample_id : str, optional
+        Sample identifier for organizing plots.
+    """
     plots_path = Path(output_dir) / "plots" / sample_id
     os.makedirs(plots_path, exist_ok=True)
     cmd = ["gunc", "plot", "--verbose", "-d", result_file, "-o", str(plots_path)]
     run_command(cmd, verbose=True)
 
 
-def process_sample(sample_id, sample_path, output_dir):
+def _cleanup_normalize_css(css_file_path):
+    """
+    Removes the [type="checkbox"], [type="radio"] { ... } block from the CSS file using cssutils.
+    """
+    cssutils.log.setLevel(logging.CRITICAL)
+    sheet = cssutils.parseFile(css_file_path)
+    rules_to_remove = []
+    for rule in sheet:
+        if rule.type == rule.STYLE_RULE:
+            selectors = [s.strip() for s in rule.selectorText.split(",")]
+            if '[type="checkbox"]' in selectors and '[type="radio"]' in selectors:
+                rules_to_remove.append(rule)
+    for rule in rules_to_remove:
+        sheet.deleteRule(rule)
+    with open(css_file_path, "w") as f:
+        f.write(sheet.cssText.decode("utf-8"))
+
+
+def _process_sample(
+    sample_id, sample_path, output_dir
+) -> tuple[str, list[str], list[dict]]:
     """Process a single sample for visualization (used for parallelization)."""
     summary_data, sample_mags = [], []
     summary_files = list(Path(sample_path).glob("gunc_output/*.all_levels.tsv"))
     for sf in summary_files:
         df = pd.read_csv(sf, sep="\t")
         for _, row in df.iterrows():
-            pass_gunc_value = row["pass.GUNC"]
-            if isinstance(pass_gunc_value, str):
-                pass_gunc_bool = pass_gunc_value.lower() in [
-                    "true",
-                    "pass",
-                    "1",
-                    "yes",
-                ]
-            else:
-                pass_gunc_bool = bool(pass_gunc_value)
             summary_data.append(
                 {
                     "sample_id": sample_id,
@@ -156,7 +186,7 @@ def process_sample(sample_id, sample_path, output_dir):
                         "reference_representation_score"
                     ],
                     "contamination_portion": row["contamination_portion"],
-                    "pass_gunc": pass_gunc_bool,
+                    "pass_gunc": bool(row["pass.GUNC"]),
                     "n_contigs": row["n_contigs"],
                     "n_genes_mapped": row["n_genes_mapped"],
                     "clade_separation_score": row["clade_separation_score"],
@@ -189,7 +219,7 @@ def run_gunc(
     use_species_level=False,
     min_mapped_genes=11,
     num_partitions=None,
-):
+): # pragma: no cover
     kwargs = {
         k: v for k, v in locals().items() if k not in ["mags", "ctx", "num_partitions"]
     }
@@ -213,23 +243,6 @@ def run_gunc(
     return collated
 
 
-def cleanup_normalize_css(css_file_path):
-    """
-    Removes the [type="checkbox"], [type="radio"] { ... } block from the CSS file using cssutils.
-    """
-    sheet = cssutils.parseFile(css_file_path)
-    rules_to_remove = []
-    for rule in sheet:
-        if rule.type == rule.STYLE_RULE:
-            selectors = [s.strip() for s in rule.selectorText.split(",")]
-            if '[type="checkbox"]' in selectors and '[type="radio"]' in selectors:
-                rules_to_remove.append(rule)
-    for rule in rules_to_remove:
-        sheet.deleteRule(rule)
-    with open(css_file_path, "w") as f:
-        f.write(sheet.cssText.decode("utf-8"))
-
-
 def collate_gunc_results(
     results: GUNCResultsDirectoryFormat,
 ) -> GUNCResultsDirectoryFormat:
@@ -237,7 +250,6 @@ def collate_gunc_results(
     output = GUNCResultsDirectoryFormat()
     for result in results:
         for sample_id, sample_path in result.file_dict().items():
-            print(sample_id, sample_path)
             shutil.copytree(sample_path, output.path / sample_id, dirs_exist_ok=True)
     return output
 
@@ -245,23 +257,14 @@ def collate_gunc_results(
 def visualize(
     output_dir: str, results: GUNCResultsDirectoryFormat, threads: int = 1
 ) -> None:
-    """Visualize the GUNC results.
-    Parameters
-    ----------
-    output_dir : str
-        Output directory for visualization files.
-    results : GUNCResultsDirectoryFormat
-        GUNC results to visualize.
-    threads : int, optional
-        Number of threads to use for parallel processing (default is 1).
-    """
+    """Visualize the GUNC results."""
     samples = {}
     summary_data = []
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
         futures = {
             executor.submit(
-                process_sample, sample_id, sample_path, output_dir
+                _process_sample, sample_id, sample_path, output_dir
             ): sample_id
             for sample_id, sample_path in results.file_dict().items()
         }
@@ -285,6 +288,6 @@ def visualize(
     q2templates.render(templates, output_dir, context=context)
 
     os.remove(os.path.join(output_dir, "q2templateassets", "css", "bootstrap.min.css"))
-    cleanup_normalize_css(
+    _cleanup_normalize_css(
         os.path.join(output_dir, "q2templateassets", "css", "normalize.css")
     )
