@@ -203,11 +203,11 @@ class TestGUNC(TestPluginBase):
         )
 
         self.assertEqual(obs_id, "SRR9640343")
-        self.assertEqual(
-            obs_mags,
+        self.assertListEqual(
+            sorted(obs_mags),
             [
-                "1da59757-769b-4713-923d-e3d2e60690c9",
                 "0c20367d-4775-43f1-90c6-1a36afc5e4da",
+                "1da59757-769b-4713-923d-e3d2e60690c9",
             ],
         )
         self.assertEqual(len(obs_summary), 14)
@@ -246,11 +246,11 @@ class TestGUNC(TestPluginBase):
         )
 
         self.assertEqual(obs_id, "")
-        self.assertEqual(
-            obs_mags,
+        self.assertListEqual(
+            sorted(obs_mags),
             [
-                "1da59757-769b-4713-923d-e3d2e60690c9",
                 "0c20367d-4775-43f1-90c6-1a36afc5e4da",
+                "1da59757-769b-4713-923d-e3d2e60690c9",
             ],
         )
         self.assertEqual(len(obs_summary), 14)
@@ -289,11 +289,11 @@ class TestGUNC(TestPluginBase):
         )
 
         self.assertEqual(obs_id, "")
-        self.assertEqual(
-            obs_mags,
+        self.assertListEqual(
+            sorted(obs_mags),
             [
-                "1da59757-769b-4713-923d-e3d2e60690c9",
                 "0c20367d-4775-43f1-90c6-1a36afc5e4da",
+                "1da59757-769b-4713-923d-e3d2e60690c9",
             ],
         )
         self.assertEqual(len(obs_summary), 14)
