@@ -21,7 +21,7 @@
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1">
             <fieldset class="fieldset text-sm">
-              <legend class="fieldset-legend">Selections</legend>
+              <legend class="fieldset-legend mb-1">Selections</legend>
 
               <label class="label">Sample</label>
               <select class="select select-sm w-full" id="sample-selector">
@@ -45,26 +45,26 @@
               </select>
             </fieldset>
           </div>
-          <div class="flex-1">
-            <fieldset class="fieldset text-base mb-6" id="controls-container">
-              <legend class="fieldset-legend text-sm">Plot controls</legend>
+          <div class="flex-1 items-start">
+            <fieldset class="fieldset text-sm" id="controls-container">
+              <legend class="fieldset-legend mb-1">Plot controls</legend>
               <p>
-                <input type="checkbox" class="checkbox checkbox-sm" id="filter-gunc-pass" checked="checked">
-                <span class="text-base">Hide GUNC-failed MAGs</span>
+                <input type="checkbox" class="checkbox checkbox-sm" id="filter-gunc-pass">
+                <span>Show GUNC-failed MAGs</span>
               </p>
               <p>
                 <input type="checkbox" class="checkbox checkbox-sm" id="reverse-y-axis" checked="checked">
-                <span class="text-base">Reverse Y-axis</span>
+                <span>Reverse Y-axis</span>
               </p>
             </fieldset>
           </div>
 
           <div class="flex-1">
             <fieldset class="fieldset text-sm" id="stats-container">
-              <legend class="fieldset-legend">Data summary</legend>
-              <div><span class="badge badge-neutral"></span> sample(s)</div>
-              <div><span class="badge badge-success"></span> passing MAGs</div>
-              <div><span class="badge badge-error"></span> failing MAGs</div>
+              <legend class="fieldset-legend mb-1">Data summary</legend>
+              <div class="items-center">Sample(s):<span class="badge badge-sm badge-soft badge-info ml-2"></span></div>
+              <div class="flex items-center">Passing MAGs:<span class="badge badge-sm badge-soft badge-success ml-2"></span></div>
+              <div class="items-center">Failing MAGs:<span class="badge badge-sm badge-soft badge-error ml-2"></span></div>
             </fieldset>
           </div>
         </div>
@@ -111,7 +111,7 @@
     
     // Apply GUNC pass filter if checkbox is checked
     const filterCheckbox = document.getElementById('filter-gunc-pass');
-    if (filterCheckbox && filterCheckbox.checked) {
+    if (filterCheckbox && ! filterCheckbox.checked) {
       // Handle both boolean and string representations of pass/fail
       dataToUse = dataToUse.filter(d => {
         const passValue = d.pass_gunc;
@@ -171,9 +171,9 @@
     console.log(`Axis limits - X: [${xMin}, ${xMax}], Y: [${yMin}, ${yMax}]`);
 
     // Update summary-card badge spans
-    const sampleCountSpan = document.querySelector('#summary-card .badge.badge-neutral');
-    const passCountSpan = document.querySelector('#summary-card .badge.badge-success');
-    const failCountSpan = document.querySelector('#summary-card .badge.badge-error');
+    const sampleCountSpan = document.querySelector('#stats-container .badge.badge-info');
+    const passCountSpan = document.querySelector('#stats-container .badge.badge-success');
+    const failCountSpan = document.querySelector('#stats-container .badge.badge-error');
 
     const sampleCount = new Set(dataToUse.map(d => d.sample_id)).size;
     const passCount = dataToUse.filter(d => {
