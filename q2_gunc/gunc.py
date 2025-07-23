@@ -37,7 +37,8 @@ EXTERNAL_CMD_WARNING = (
 
 def run_command(cmd, env=None, verbose=True, **kwargs):
     """
-    Run a command using subprocess, optionally printing the command and capturing output.
+    Run a command using subprocess, optionally printing
+    the command and capturing output.
 
     Parameters
     ----------
@@ -152,7 +153,8 @@ def _run_gunc_plot(result_file: str, output_dir: str, sample_id: str = "") -> No
 
 def _cleanup_normalize_css(css_file_path):
     """
-    Removes the [type="checkbox"], [type="radio"] { ... } block from the CSS file using cssutils.
+    Removes the [type="checkbox"], [type="radio"] { ... }
+    block from the CSS file using cssutils.
     """
     cssutils.log.setLevel(logging.CRITICAL)
     sheet = cssutils.parseFile(css_file_path)
@@ -219,7 +221,7 @@ def run_gunc(
     use_species_level=False,
     min_mapped_genes=11,
     num_partitions=None,
-): # pragma: no cover
+):  # pragma: no cover
     kwargs = {
         k: v for k, v in locals().items() if k not in ["mags", "ctx", "num_partitions"]
     }

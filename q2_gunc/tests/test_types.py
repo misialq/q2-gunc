@@ -10,7 +10,9 @@ from q2_gunc.types import (
     GUNCGeneCountsFormat,
     GUNCHTMLPlotFormat,
     GUNCResultsDirectoryFormat,
-    GUNCDatabaseDirFmt, GUNCDB, GUNCResults,
+    GUNCDatabaseDirFmt,
+    GUNCDB,
+    GUNCResults,
 )
 
 
@@ -83,7 +85,6 @@ class TestTypes(TestPluginBase):
         f = self.get_data_path("db")
         fmt = GUNCDatabaseDirFmt(f, mode="r")
         fmt.validate()
-
 
     def test_db_semantic_type_registration(self):
         self.assertRegisteredSemanticType(GUNCDB)

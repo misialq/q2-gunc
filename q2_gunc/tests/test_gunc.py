@@ -15,7 +15,6 @@ from unittest.mock import patch, ANY, call
 from q2_types.feature_data_mag import MAGSequencesDirFmt
 from q2_types.per_sample_sequences import MultiMAGSequencesDirFmt
 from qiime2.plugin.testing import TestPluginBase
-from qiime2.plugins import gunc
 
 from q2_gunc import collate_gunc_results
 from q2_gunc.gunc import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt
@@ -189,9 +188,9 @@ class TestGUNC(TestPluginBase):
         _cleanup_normalize_css(dest)
 
         with open(dest, "r") as f:
-            for l in f.readlines():
-                self.assertNotIn('[type="checkbox"]', l)
-                self.assertNotIn('[type="radio"]', l)
+            for _l in f.readlines():
+                self.assertNotIn('[type="checkbox"]', _l)
+                self.assertNotIn('[type="radio"]', _l)
         os.unlink(dest)
 
     @patch("shutil.copy")
@@ -217,7 +216,8 @@ class TestGUNC(TestPluginBase):
                 call(
                     Path(
                         self.get_data_path(
-                            "results-per-sample/SRR9640343/plots/1da59757-769b-4713-923d-e3d2e60690c9.viz.html"
+                            "results-per-sample/SRR9640343/plots/"
+                            "1da59757-769b-4713-923d-e3d2e60690c9.viz.html"
                         )
                     ),
                     Path(self.temp_dir.name + "/plots/SRR9640343"),
@@ -225,7 +225,8 @@ class TestGUNC(TestPluginBase):
                 call(
                     Path(
                         self.get_data_path(
-                            "results-per-sample/SRR9640343/plots/0c20367d-4775-43f1-90c6-1a36afc5e4da.viz.html"
+                            "results-per-sample/SRR9640343/plots/"
+                            "0c20367d-4775-43f1-90c6-1a36afc5e4da.viz.html"
                         )
                     ),
                     Path(self.temp_dir.name + "/plots/SRR9640343"),
@@ -258,7 +259,8 @@ class TestGUNC(TestPluginBase):
                 call(
                     Path(
                         self.get_data_path(
-                            "results/plots/1da59757-769b-4713-923d-e3d2e60690c9.viz.html"
+                            "results/plots/"
+                            "1da59757-769b-4713-923d-e3d2e60690c9.viz.html"
                         )
                     ),
                     Path(self.temp_dir.name + "/plots"),
@@ -266,7 +268,8 @@ class TestGUNC(TestPluginBase):
                 call(
                     Path(
                         self.get_data_path(
-                            "results/plots/0c20367d-4775-43f1-90c6-1a36afc5e4da.viz.html"
+                            "results/plots/"
+                            "0c20367d-4775-43f1-90c6-1a36afc5e4da.viz.html"
                         )
                     ),
                     Path(self.temp_dir.name + "/plots"),
@@ -299,14 +302,16 @@ class TestGUNC(TestPluginBase):
             [
                 call(
                     self.get_data_path(
-                        "results-no-plots/diamond_output/1da59757-769b-4713-923d-e3d2e60690c9.diamond.gtdb_95.out"
+                        "results-no-plots/diamond_output/"
+                        "1da59757-769b-4713-923d-e3d2e60690c9.diamond.gtdb_95.out"
                     ),
                     self.temp_dir.name,
                     "",
                 ),
                 call(
                     self.get_data_path(
-                        "results-no-plots/diamond_output/0c20367d-4775-43f1-90c6-1a36afc5e4da.diamond.gtdb_95.out"
+                        "results-no-plots/diamond_output/"
+                        "0c20367d-4775-43f1-90c6-1a36afc5e4da.diamond.gtdb_95.out"
                     ),
                     self.temp_dir.name,
                     "",
@@ -408,10 +413,16 @@ class TestGUNC(TestPluginBase):
         )
 
     def test_collate_results(self):
-        obs_result = collate_gunc_results([
-            GUNCResultsDirectoryFormat(self.get_data_path("results-per-sample"), mode="r"),
-            GUNCResultsDirectoryFormat(self.get_data_path("results-per-sample2"), mode="r")
-        ])
+        obs_result = collate_gunc_results(
+            [
+                GUNCResultsDirectoryFormat(
+                    self.get_data_path("results-per-sample"), mode="r"
+                ),
+                GUNCResultsDirectoryFormat(
+                    self.get_data_path("results-per-sample2"), mode="r"
+                ),
+            ]
+        )
 
         self.assertIsInstance(obs_result, GUNCResultsDirectoryFormat)
 
@@ -425,13 +436,17 @@ class TestGUNC(TestPluginBase):
             sample_dir = result_files[sample_id]
             self.assertTrue(os.path.isdir(sample_dir))
 
-            summary_tsv_files = [f for f in os.listdir(sample_dir) if f.endswith(".tsv")]
+            summary_tsv_files = [
+                f for f in os.listdir(sample_dir) if f.endswith(".tsv")
+            ]
             self.assertEquals(len(summary_tsv_files), 1)
 
             gunc_output_dir = os.path.join(sample_dir, "gunc_output")
             self.assertTrue(os.path.isdir(gunc_output_dir))
 
-            detail_tsv_files = [f for f in os.listdir(gunc_output_dir) if f.endswith(".tsv")]
+            detail_tsv_files = [
+                f for f in os.listdir(gunc_output_dir) if f.endswith(".tsv")
+            ]
             self.assertTrue(len(detail_tsv_files) > 0)
 
             diamond_output_dir = os.path.join(sample_dir, "diamond_output")

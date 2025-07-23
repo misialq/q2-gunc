@@ -9,10 +9,10 @@
 from q2_types.feature_data import FeatureData
 from q2_types.feature_data_mag import MAG
 from q2_types.per_sample_sequences import MAGs
-from q2_types.reference_db import ReferenceDB, Diamond
+from q2_types.reference_db import ReferenceDB
 from q2_types.sample_data import SampleData
 from qiime2.core.type import Range, Int, Bool, Str, Choices, List
-from qiime2.plugin import Citations, Plugin, Collection
+from qiime2.plugin import Citations, Plugin
 from q2_gunc import (
     __version__,
     _run_gunc,

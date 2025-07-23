@@ -9,7 +9,6 @@ import json
 
 import pandas as pd
 from bs4 import BeautifulSoup
-from q2_types._util import FileDictMixin
 from q2_types.feature_data import ProteinFASTAFormat
 from q2_types.genome_data import OrthologFileFmt
 from q2_types.reference_db import DiamondDatabaseFileFmt
