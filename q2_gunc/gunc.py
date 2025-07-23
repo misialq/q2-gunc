@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Union
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import cssutils
 
 import q2templates
 from q2_types.feature_data_mag import MAGSequencesDirFmt
@@ -163,7 +164,6 @@ def process_sample(sample_id, sample_path, output_dir):
                 }
             )
 
-
     diamond_outputs = Path(sample_path) / "diamond_output"
     plots = Path(sample_path) / "plots"
     for result_file in list(diamond_outputs.glob("*")):
@@ -211,6 +211,23 @@ def run_gunc(
     (collated,) = _collate(results)
 
     return collated
+
+
+def cleanup_normalize_css(css_file_path):
+    """
+    Removes the [type="checkbox"], [type="radio"] { ... } block from the CSS file using cssutils.
+    """
+    sheet = cssutils.parseFile(css_file_path)
+    rules_to_remove = []
+    for rule in sheet:
+        if rule.type == rule.STYLE_RULE:
+            selectors = [s.strip() for s in rule.selectorText.split(",")]
+            if '[type="checkbox"]' in selectors and '[type="radio"]' in selectors:
+                rules_to_remove.append(rule)
+    for rule in rules_to_remove:
+        sheet.deleteRule(rule)
+    with open(css_file_path, "w") as f:
+        f.write(sheet.cssText.decode("utf-8"))
 
 
 def collate_gunc_results(
@@ -268,4 +285,6 @@ def visualize(
     q2templates.render(templates, output_dir, context=context)
 
     os.remove(os.path.join(output_dir, "q2templateassets", "css", "bootstrap.min.css"))
-    os.remove(os.path.join(output_dir, "q2templateassets", "css", "normalize.css"))
+    cleanup_normalize_css(
+        os.path.join(output_dir, "q2templateassets", "css", "normalize.css")
+    )
