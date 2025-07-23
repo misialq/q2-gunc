@@ -1,23 +1,20 @@
 body {
   background: #fff;
-  font-size: medium
+  font-size: medium;
 }
 
-.form-select { font-size: 1.5rem }
+/* Remove Bootstrap-specific selectors and keep only custom or daisyUI-relevant tweaks */
 .selector-row { margin-bottom: 20px; }
 .custom-dropdown { min-width: 180px; }
-.nav-tabs { padding-top: 10px;}
-
 #controls-container {
   margin-top: 10px;
 }
 
-.card-header .badge {
-  font-size: 1em;
-  margin-right: 0.25em;
+.fieldset {
+  border: 0px
 }
 
-/* Vega slider styling */
+/* Vega slider styling (keep, but update color to match daisyUI primary if desired) */
 .vega-bindings {
   margin-bottom: 10px;
   margin-top: 5px;
@@ -37,7 +34,7 @@ body {
   min-width: 140px;
   margin-right: 10px;
   font-weight: 500;
-  color: #495057;
+  color: #444;
 }
 
 .vega-bind label {
@@ -54,19 +51,18 @@ body {
 
 .vega-bind input[type="range"] {
   flex: 1 1 120px;
-  /*max-width: 180px;*/
   margin: 0 5px;
   cursor: pointer;
 }
 
 .vega-bind input[type="range"]::-webkit-slider-track {
-  background: #dee2e6;
+  background: #e5e6e6;
   height: 4px;
   border-radius: 2px;
 }
 
 .vega-bind input[type="range"]::-webkit-slider-thumb {
-  background: #007bff;
+  background: #2563eb;
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -74,14 +70,14 @@ body {
 }
 
 .vega-bind input[type="range"]::-moz-range-track {
-  background: #dee2e6;
+  background: #e5e6e6;
   height: 4px;
   border-radius: 2px;
   border: none;
 }
 
 .vega-bind input[type="range"]::-moz-range-thumb {
-  background: #007bff;
+  background: #2563eb;
   height: 16px;
   width: 16px;
   border-radius: 50%;

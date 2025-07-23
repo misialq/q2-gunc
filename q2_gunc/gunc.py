@@ -227,3 +227,6 @@ def visualize(output_dir: str, results: GUNCResultsDirectoryFormat) -> None:
         shutil.copytree(TEMPLATES / d, os.path.join(output_dir, d))
 
     q2templates.render(templates, output_dir, context=context)
+
+    os.remove(os.path.join(output_dir, "q2templateassets", "css", "bootstrap.min.css"))
+    os.remove(os.path.join(output_dir, "q2templateassets", "css", "normalize.css"))
