@@ -4,6 +4,7 @@ channels:
 - bioconda
 dependencies:
   - qiime2
+  - q2cli
   - q2templates
   - q2-types
   - q2-metadata
