@@ -1,6 +1,6 @@
 # flake8: noqa
 # ----------------------------------------------------------------------------
-# Copyright (c) 2024, Michal Ziemski.
+# Copyright (c) 2025, Bokulich Lab.
 #
 # Distributed under the terms of the Modified BSD License.
 #

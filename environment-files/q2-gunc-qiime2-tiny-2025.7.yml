@@ -3,7 +3,10 @@ channels:
 - conda-forge
 - bioconda
 dependencies:
-  - qiime2-tiny
+  - qiime2
+  - q2templates
+  - q2-types
+  - q2-metadata
   - beautifulsoup4
   - cssutils
   - gunc

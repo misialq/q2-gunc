@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2024, Michal Ziemski.
+# Copyright (c) 2025, Bokulich Lab.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -40,10 +40,7 @@ plugin = Plugin(
     package="q2_gunc",
     description="A QIIME 2 plugin for MAG analysis with GUNC.",
     short_description="Plugin for GUNC analysis.",
-    # The plugin-level citation of 'Caporaso-Bolyen-2024' is provided as
-    # an example. You can replace this with citations to other references
-    # in citations.bib.
-    citations=[citations["Caporaso-Bolyen-2024"]],
+    citations=[citations["orakov_gunc_2021"]],
 )
 
 plugin.methods.register_function(
