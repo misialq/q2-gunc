@@ -17,7 +17,7 @@ from q2_types.per_sample_sequences import MultiMAGSequencesDirFmt
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_gunc import collate_gunc_results
-from q2_gunc.gunc import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt
+from q2_gunc.gunc import GUNCResultsDirectoryFormat, GUNCDatabaseDirFmt, _generate_plots
 from q2_gunc.gunc import (
     download_gunc_db,
     _run_gunc,
@@ -62,8 +62,61 @@ class TestGUNC(TestPluginBase):
         )
         self.assertIsInstance(db, GUNCDatabaseDirFmt)
 
+    @patch("os.makedirs")
+    @patch("q2_gunc.gunc._run_gunc_plot")
+    def test_generate_plots_no_sample_id(self, mock_run_plot, mock_makedirs):
+        results = GUNCResultsDirectoryFormat(self.get_data_path("results"), mode="r")
+        _generate_plots(results)
+
+        mock_makedirs.assert_called_once_with(
+            Path(results.path) / "plots", exist_ok=True
+        )
+        mock_run_plot.assert_has_calls(
+            [
+                call(
+                    str(results.path) + "/diamond_output/"
+                    "0c20367d-4775-43f1-90c6-1a36afc5e4da.diamond.gtdb_95.out",
+                    str(results.path) + "/plots",
+                ),
+                call(
+                    str(results.path) + "/diamond_output/"
+                    "1da59757-769b-4713-923d-e3d2e60690c9.diamond.gtdb_95.out",
+                    str(results.path) + "/plots",
+                ),
+            ],
+            any_order=True,
+        )
+
+    @patch("os.makedirs")
+    @patch("q2_gunc.gunc._run_gunc_plot")
+    def test_generate_plots_with_samples(self, mock_run_plot, mock_makedirs):
+        results = GUNCResultsDirectoryFormat(
+            self.get_data_path("results-per-sample"), mode="r"
+        )
+        _generate_plots(results, "SRR9640343")
+
+        mock_makedirs.assert_called_once_with(
+            Path(results.path) / "SRR9640343" / "plots", exist_ok=True
+        )
+        mock_run_plot.assert_has_calls(
+            [
+                call(
+                    str(results.path) + "/SRR9640343/diamond_output/"
+                    "0c20367d-4775-43f1-90c6-1a36afc5e4da.diamond.gtdb_95.out",
+                    str(results.path) + "/SRR9640343/plots",
+                ),
+                call(
+                    str(results.path) + "/SRR9640343/diamond_output/"
+                    "1da59757-769b-4713-923d-e3d2e60690c9.diamond.gtdb_95.out",
+                    str(results.path) + "/SRR9640343/plots",
+                ),
+            ],
+            any_order=True,
+        )
+
+    @patch("q2_gunc.gunc._generate_plots")
     @patch("q2_gunc.gunc.run_command")
-    def test_run_gunc_sample_data(self, mock_run_cmd):
+    def test_run_gunc_sample_data(self, mock_run_cmd, mock_plots):
         obs = _run_gunc(
             mags=self.mags_per_sample, db=self.db, threads=4, sensitive=True
         )
@@ -111,11 +164,16 @@ class TestGUNC(TestPluginBase):
                 verbose=True,
             ),
         ]
-        mock_run_cmd.assert_has_calls(exp_calls)
+        mock_run_cmd.assert_has_calls(exp_calls, any_order=True)
+
+        exp_plots_calls = [call(obs, "sample1"), call(obs, "sample2")]
+        mock_plots.assert_has_calls(exp_plots_calls, any_order=True)
+
         self.assertIsInstance(obs, GUNCResultsDirectoryFormat)
 
+    @patch("q2_gunc.gunc._generate_plots")
     @patch("q2_gunc.gunc.run_command")
-    def test_run_gunc_feature_data(self, mock_run_cmd):
+    def test_run_gunc_feature_data(self, mock_run_cmd, mock_plots):
         obs = _run_gunc(mags=self.mags, db=self.db, threads=4, sensitive=True)
         mock_run_cmd.assert_called_with(
             [
@@ -138,35 +196,16 @@ class TestGUNC(TestPluginBase):
             ],
             verbose=True,
         )
+        mock_plots.assert_called_with(obs)
         self.assertIsInstance(obs, GUNCResultsDirectoryFormat)
 
     @patch("q2_gunc.gunc.run_command")
     @patch("os.makedirs")
-    def test_run_gunc_plot_no_sample(self, mock_makedirs, mock_run_cmd):
-        _run_gunc_plot("some-results.abc", "some-output-dir")
-
-        exp_plots_fp = Path("some-output-dir/plots")
-        mock_makedirs.assert_called_once_with(exp_plots_fp, exist_ok=True)
-        mock_run_cmd.assert_called_once_with(
-            [
-                "gunc",
-                "plot",
-                "--verbose",
-                "-d",
-                "some-results.abc",
-                "-o",
-                str(exp_plots_fp),
-            ],
-            verbose=True,
-        )
-
-    @patch("q2_gunc.gunc.run_command")
-    @patch("os.makedirs")
-    def test_run_gunc_plot_with_sample(self, mock_makedirs, mock_run_cmd):
-        _run_gunc_plot("some-results.abc", "some-output-dir", "sample1")
-
+    def test_run_gunc_plot(self, mock_makedirs, mock_run_cmd):
         exp_plots_fp = Path("some-output-dir/plots/sample1")
-        mock_makedirs.assert_called_once_with(exp_plots_fp, exist_ok=True)
+        _run_gunc_plot("some-results.abc", str(exp_plots_fp))
+
+        mock_makedirs.assert_called_once_with(str(exp_plots_fp), exist_ok=True)
         mock_run_cmd.assert_called_once_with(
             [
                 "gunc",
@@ -305,16 +344,14 @@ class TestGUNC(TestPluginBase):
                         "results-no-plots/diamond_output/"
                         "1da59757-769b-4713-923d-e3d2e60690c9.diamond.gtdb_95.out"
                     ),
-                    self.temp_dir.name,
-                    "",
+                    self.temp_dir.name + "/plots",
                 ),
                 call(
                     self.get_data_path(
                         "results-no-plots/diamond_output/"
                         "0c20367d-4775-43f1-90c6-1a36afc5e4da.diamond.gtdb_95.out"
                     ),
-                    self.temp_dir.name,
-                    "",
+                    self.temp_dir.name + "/plots",
                 ),
             ],
             any_order=True,

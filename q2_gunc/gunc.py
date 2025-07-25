@@ -74,6 +74,32 @@ def download_gunc_db(database: str = "progenomes") -> GUNCDatabaseDirFmt:
     return db
 
 
+def _run_gunc_plot(result_file: str, plots_dir: str) -> None:
+    """
+    Run GUNC plot command for a given result file and copy or generate the plot.
+
+    Parameters
+    ----------
+    result_file : str
+        Path to the result file to plot.
+    plots_dir : str
+        Output directory for plots.
+    """
+    os.makedirs(plots_dir, exist_ok=True)
+    cmd = ["gunc", "plot", "--verbose", "-d", result_file, "-o", plots_dir]
+    run_command(cmd, verbose=True)
+
+
+def _generate_plots(results: GUNCResultsDirectoryFormat, sample_id: str = ""):
+    """Generate GUNC plots for all result files in the results directory."""
+
+    diamond_outputs = (Path(results.path) / sample_id / "diamond_output").glob("*")
+    plots_dir = Path(results.path) / sample_id / "plots"
+    os.makedirs(plots_dir, exist_ok=True)
+    for result_file in diamond_outputs:
+        _run_gunc_plot(str(result_file), str(plots_dir))
+
+
 def _run_gunc(
     mags: Union[MAGSequencesDirFmt, MultiMAGSequencesDirFmt],
     db: GUNCDatabaseDirFmt,
@@ -118,6 +144,7 @@ def _run_gunc(
                 ]
             )
             run_command(cmd, verbose=True)
+            _generate_plots(results, sample_id)
     else:
         base_cmd.extend(
             [
@@ -128,27 +155,9 @@ def _run_gunc(
             ]
         )
         run_command(base_cmd, verbose=True)
+        _generate_plots(results)
 
     return results
-
-
-def _run_gunc_plot(result_file: str, output_dir: str, sample_id: str = "") -> None:
-    """
-    Run GUNC plot command for a given result file and copy or generate the plot.
-
-    Parameters
-    ----------
-    result_file : str
-        Path to the result file to plot.
-    output_dir : str
-        Output directory for plots.
-    sample_id : str, optional
-        Sample identifier for organizing plots.
-    """
-    plots_path = Path(output_dir) / "plots" / sample_id
-    os.makedirs(plots_path, exist_ok=True)
-    cmd = ["gunc", "plot", "--verbose", "-d", result_file, "-o", str(plots_path)]
-    run_command(cmd, verbose=True)
 
 
 def _cleanup_normalize_css(css_file_path):
@@ -207,7 +216,8 @@ def _process_sample(
             os.makedirs(dest, exist_ok=True)
             shutil.copy(plot_fp, dest)
         else:
-            _run_gunc_plot(str(result_file), output_dir, sample_id)
+            plots_path = Path(output_dir) / "plots" / sample_id
+            _run_gunc_plot(str(result_file), str(plots_path))
 
     return sample_id, sample_mags, summary_data
 
