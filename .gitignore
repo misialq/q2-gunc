@@ -169,3 +169,5 @@ cython_debug/
 _version.py
 
 .idea
+cache/
+*.qz?

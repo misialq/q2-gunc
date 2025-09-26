@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import importlib
 
 from q2_types.feature_data import FeatureData
 from q2_types.feature_data_mag import MAG
@@ -148,3 +149,5 @@ plugin.register_formats(
 plugin.register_semantic_types(GUNCResults, GUNCDB)
 plugin.register_semantic_type_to_format(GUNCResults, GUNCResultsDirectoryFormat)
 plugin.register_semantic_type_to_format(ReferenceDB[GUNCDB], GUNCDatabaseDirFmt)
+
+importlib.import_module("q2_gunc.types._transformer")
