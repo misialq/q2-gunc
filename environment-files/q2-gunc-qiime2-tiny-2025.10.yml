@@ -1,0 +1,16 @@
+channels:
+- https://packages.qiime2.org/qiime2/2025.10/tiny/released
+- conda-forge
+- bioconda
+dependencies:
+  - qiime2
+  - q2cli
+  - q2templates
+  - q2-types
+  - q2-metadata
+  - beautifulsoup4
+  - cssutils
+  - gunc
+  - pip
+  - pip:
+     - "q2-gunc@git+https://github.com/bokulich-lab/q2-gunc.git"
