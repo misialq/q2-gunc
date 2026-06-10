@@ -476,7 +476,7 @@ class TestGUNC(TestPluginBase):
             summary_tsv_files = [
                 f for f in os.listdir(sample_dir) if f.endswith(".tsv")
             ]
-            self.assertEquals(len(summary_tsv_files), 1)
+            self.assertEqual(len(summary_tsv_files), 1)
 
             gunc_output_dir = os.path.join(sample_dir, "gunc_output")
             self.assertTrue(os.path.isdir(gunc_output_dir))
